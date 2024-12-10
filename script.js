@@ -1,4 +1,4 @@
-const API_KEY = "process.env.API_KEY";
+const API_KEY = "b9f08120fc4c4166ab9b58fe50ff1fe1";
 const url = "https://newsapi.org/v2/everything?q=";
 
 window.addEventListener("load", () => fetchNews("India"));
@@ -8,9 +8,20 @@ function reload() {
 }
 
 async function fetchNews(query) {
-    const res = await fetch(`${url}${query}&apiKey=${API_KEY}`);
-    const data = await res.json();
-    bindData(data.articles);
+    try {
+        const res = await fetch(`${url}${query}&apiKey=${API_KEY}`);
+        if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`);
+        }
+        const data = await res.json();
+        if (!data.articles) {
+            throw new Error("No articles found");
+        }
+        bindData(data.articles);
+    } catch (error) {
+        console.error("Error fetching news:", error);
+        showErrorMessage("Unable to fetch news. Please try again later.");
+    }
 }
 
 function bindData(articles) {
@@ -34,18 +45,23 @@ function fillDataInCard(cardClone, article) {
     const newsDesc = cardClone.querySelector("#news-desc");
 
     newsImg.src = article.urlToImage;
-    newsTitle.innerHTML = article.title;
-    newsDesc.innerHTML = article.description;
+    newsTitle.innerHTML = article.title || "No title available";
+    newsDesc.innerHTML = article.description || "No description available";
 
     const date = new Date(article.publishedAt).toLocaleString("en-US", {
         timeZone: "Asia/Jakarta",
     });
 
-    newsSource.innerHTML = `${article.source.name} · ${date}`;
+    newsSource.innerHTML = `${article.source.name || "Unknown"} · ${date}`;
 
     cardClone.firstElementChild.addEventListener("click", () => {
         window.open(article.url, "_blank");
     });
+}
+
+function showErrorMessage(message) {
+    const cardsContainer = document.getElementById("cards-container");
+    cardsContainer.innerHTML = `<div class="error-message">${message}</div>`;
 }
 
 let curSelectedNav = null;
